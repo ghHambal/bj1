@@ -457,7 +457,7 @@
                     <option value="10">10 ข้อ</option>
                     <option value="20" selected>20 ข้อ</option>
                     <option value="40">40 ข้อ</option>
-                    <option value="999">ทั้งหมด</option>
+                    <option value="all">ทั้งหมด</option>
                   </select>
                   <button id="btnStartNewExam" class="gold-gradient text-slate-950 font-extrabold text-xs px-3 py-2 rounded-xl shadow tap-card">
                     เริ่มชุดใหม่
@@ -2668,7 +2668,8 @@
     function startNewExamSession() {
       const subj = document.getElementById("examSubjectSelect").value;
       const requestedMode = document.getElementById("examModeSelect").value;
-      const count = Number(document.getElementById("examCountSelect").value);
+      const selectedCount = document.getElementById("examCountSelect").value;
+      const count = selectedCount === "all" ? QUESTION_BANK.length : Number(selectedCount);
       const trial = isTrialMember();
 
       if (currentMemberProfile?.access_status === "trial" && !trial) {
