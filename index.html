@@ -1599,6 +1599,7 @@
       ? window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY)
       : null;
     const membershipLabels = {
+      trial: "เริ่มทดลองใช้",
       pending: "รอตรวจสอบ",
       approved: "อนุมัติแล้ว",
       rejected: "ไม่อนุมัติ",
@@ -1612,6 +1613,9 @@
     let progressHydratedUserId = null;
     let progressSyncTimer = null;
     let progressSyncInFlight = false;
+    const TRIAL_QUESTION_LIMIT = 12;
+    let trialAttemptQuestionIds = new Set();
+    let trialAttemptCount = 0;
 
     function escapeHtml(value) {
       return String(value ?? "")
@@ -1659,7 +1663,8 @@
       const signedIn = Boolean(currentAuthUser);
       const isAdmin = currentAuthUser?.app_metadata?.exam_role === "admin";
       const status = currentMemberProfile?.access_status || "pending";
-      const canUseApp = isAdmin || status === "approved";
+      const isTrialActive = status === "trial" && trialAttemptCount < (currentMemberProfile?.trial_question_limit || TRIAL_QUESTION_LIMIT);
+      const canUseApp = isAdmin || status === "approved" || isTrialActive;
       gate.classList.toggle("hidden", canUseApp);
       if (canUseApp) return;
       if (!signedIn) {
@@ -1668,8 +1673,9 @@
         return;
       }
       const label = membershipLabels[status] || status;
-      message.innerHTML = `บัญชี <strong class="text-white">${escapeHtml(currentAuthUser.email || "สมาชิก")}</strong><br>สถานะการใช้งาน: <strong class="${status === "rejected" || status === "revoked" ? "text-rose-300" : "text-amber-300"}">${escapeHtml(label)}</strong><br><span class="text-slate-400">เปิดบัญชีสมาชิกเพื่อส่งคำขอชำระเงินและรอแอดมินอนุมัติ</span>`;
-      message.className = "p-3 rounded-2xl bg-slate-950 border border-amber-500/25 text-xs text-slate-300 leading-relaxed";
+      const trialDone = status === "trial";
+      message.innerHTML = `บัญชี <strong class="text-white">${escapeHtml(currentAuthUser.email || "สมาชิก")}</strong><br>สถานะการใช้งาน: <strong class="${status === "rejected" || status === "revoked" ? "text-rose-300" : "text-amber-300"}">${escapeHtml(label)}</strong><br><span class="text-slate-400">${trialDone ? "สิทธิ์ทดลองใช้ครบแล้ว หากต้องการทำข้อสอบต่อให้ส่งคำขอสนับสนุนเพื่อปลดล็อกระบบ" : "เปิดบัญชีสมาชิกเพื่อส่งคำขอใช้งานและรอแอดมินอนุมัติ"}</span>`;
+      message.className = `p-3 rounded-2xl bg-slate-950 border ${trialDone ? "border-violet-400/35" : "border-amber-500/25"} text-xs text-slate-300 leading-relaxed`;
     }
 
     async function ensureMemberProfile(user) {
@@ -1684,7 +1690,13 @@
       const displayName = user.user_metadata?.display_name || user.email?.split("@")[0] || "สมาชิกใหม่";
       const { data: inserted, error: insertError } = await supabaseClient
         .from("exam_member_profiles")
-        .insert({ user_id: user.id, display_name: displayName })
+        .insert({
+          user_id: user.id,
+          display_name: displayName,
+          access_status: "trial",
+          trial_started_at: new Date().toISOString(),
+          trial_question_limit: TRIAL_QUESTION_LIMIT
+        })
         .select("*")
         .single();
       if (insertError) throw insertError;
@@ -1695,6 +1707,8 @@
       if (!user) {
         currentMemberProfile = null;
         latestPayment = null;
+        trialAttemptQuestionIds = new Set();
+        trialAttemptCount = 0;
         return;
       }
       currentMemberProfile = await ensureMemberProfile(user);
@@ -1707,6 +1721,37 @@
         .maybeSingle();
       if (error) throw error;
       latestPayment = data || null;
+      await loadTrialAttempts(user);
+    }
+
+    async function loadTrialAttempts(user = currentAuthUser) {
+      if (!user || currentMemberProfile?.access_status !== "trial") {
+        trialAttemptQuestionIds = new Set();
+        trialAttemptCount = 0;
+        return;
+      }
+      const { data, error } = await supabaseClient
+        .from("exam_trial_attempts")
+        .select("question_id")
+        .eq("user_id", user.id);
+      if (error) throw error;
+      trialAttemptQuestionIds = new Set((data || []).map(row => row.question_id));
+      trialAttemptCount = trialAttemptQuestionIds.size;
+    }
+
+    function isTrialMember() {
+      return Boolean(
+        currentAuthUser &&
+        currentMemberProfile?.access_status === "trial" &&
+        trialAttemptCount < (currentMemberProfile?.trial_question_limit || TRIAL_QUESTION_LIMIT)
+      );
+    }
+
+    function openTrialSupportPrompt() {
+      const modal = document.getElementById("authModal");
+      if (modal) modal.classList.remove("hidden");
+      renderMembershipPanel();
+      setInlineMessage("memberMessage", "ขอบคุณที่ทดลองใช้ครับ หากต้องการทำข้อสอบต่อ ส่งคำขอสนับสนุนได้จากหน้านี้ แล้วแอดมินจะตรวจสอบให้", "info");
     }
 
     function renderMembershipPanel() {
@@ -1745,7 +1790,10 @@
         if (currentAuthUser) await syncProgressForUser(currentAuthUser);
         else progressHydratedUserId = null;
         renderMembershipPanel();
-        if (currentAuthUser) refreshProgressDrivenViews();
+        if (currentAuthUser) {
+          refreshProgressDrivenViews();
+          if (typeof startNewExamSession === "function") startNewExamSession();
+        }
       } catch (error) {
         console.error("Membership state error", error);
         setInlineMessage("authMessage", "เชื่อมต่อข้อมูลสมาชิกไม่สำเร็จ กรุณาลองใหม่อีกครั้ง", "error");
@@ -2458,6 +2506,7 @@
     let mockSelections = {};
     let examElapsedSecs = 0;
     let examTimerInterval = null;
+    let trialAnswerInFlight = false;
 
     function shuffleQuestions(list) {
       const shuffled = list.slice();
@@ -2468,17 +2517,32 @@
       return shuffled;
     }
 
+    function getTrialQuestionPool() {
+      const trialSubjects = ["math", "thai", "eng", "goodgov", "edu", "law"];
+      return trialSubjects
+        .flatMap(subject => QUESTION_BANK.filter(q => q.subject === subject).slice(0, 2))
+        .filter(q => !trialAttemptQuestionIds.has(q.id));
+    }
+
     function startNewExamSession() {
       const subj = document.getElementById("examSubjectSelect").value;
-      const mode = document.getElementById("examModeSelect").value;
+      const requestedMode = document.getElementById("examModeSelect").value;
       const count = Number(document.getElementById("examCountSelect").value);
+      const trial = isTrialMember();
 
+      if (currentMemberProfile?.access_status === "trial" && !trial) {
+        currentExamList = [];
+        openTrialSupportPrompt();
+        return;
+      }
+
+      const mode = trial ? "practice" : requestedMode;
       currentExamMode = mode;
       mockSubmitted = false;
       mockSelections = {};
 
-      let pool = QUESTION_BANK.slice();
-      if (subj !== "all") {
+      let pool = trial ? getTrialQuestionPool() : QUESTION_BANK.slice();
+      if (!trial && subj !== "all") {
         pool = pool.filter(q => q.subject === subj);
       }
       if (mode === "weakness") {
@@ -2494,8 +2558,15 @@
         }
       }
 
-      currentExamList = shuffleQuestions(pool).slice(0, Math.min(count, pool.length));
+      currentExamList = trial
+        ? pool.slice(0, pool.length)
+        : shuffleQuestions(pool).slice(0, Math.min(count, pool.length));
       currentQIndex = 0;
+
+      if (trial && !currentExamList.length) {
+        openTrialSupportPrompt();
+        return;
+      }
 
       if (examTimerInterval) clearInterval(examTimerInterval);
       examElapsedSecs = 0;
@@ -2581,8 +2652,48 @@
       }
     }
 
-    function handleSelectOption(qObj, chosenIdx) {
+    async function handleSelectOption(qObj, chosenIdx) {
       if (currentExamMode === "mock" && mockSubmitted) return;
+
+      if (isTrialMember()) {
+        if (trialAnswerInFlight || trialAttemptQuestionIds.has(qObj.id)) return;
+        trialAnswerInFlight = true;
+        const isCorrect = (chosenIdx === qObj.ans);
+        try {
+          const { data, error } = await supabaseClient.rpc("record_exam_trial_attempt", {
+            p_question_id: qObj.id,
+            p_selected_option: chosenIdx,
+            p_is_correct: isCorrect
+          });
+          if (error) throw error;
+          trialAttemptQuestionIds.add(qObj.id);
+          trialAttemptCount = data?.used ?? trialAttemptQuestionIds.size;
+          appState.quizStats.answered[qObj.id] = {
+            selected: chosenIdx,
+            correct: isCorrect
+          };
+          saveState();
+          renderDashboard();
+          renderCurrentQuestion();
+          renderQuestionPalette();
+          if (data?.completed || trialAttemptCount >= (currentMemberProfile?.trial_question_limit || TRIAL_QUESTION_LIMIT)) {
+            renderMembershipPanel();
+            openTrialSupportPrompt();
+          }
+        } catch (error) {
+          console.error("Trial attempt error", error);
+          if (String(error.message || "").includes("trial_complete")) {
+            trialAttemptCount = currentMemberProfile?.trial_question_limit || TRIAL_QUESTION_LIMIT;
+            renderMembershipPanel();
+            openTrialSupportPrompt();
+          } else {
+            showToast("บันทึกคำตอบทดลองใช้ไม่สำเร็จ กรุณาลองอีกครั้ง");
+          }
+        } finally {
+          trialAnswerInFlight = false;
+        }
+        return;
+      }
 
       if (currentExamMode === "mock") {
         mockSelections[qObj.id] = chosenIdx;
