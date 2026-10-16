@@ -15,6 +15,7 @@
   <script src="https://cdn.tailwindcss.com/3.4.17"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.118.0/dist/umd/supabase.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.4/build/qrcode.min.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Sarabun:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
@@ -757,10 +758,20 @@
             <strong class="text-sm text-amber-300">ส่งคำขอชำระค่าพัฒนา/ค่ากาแฟ</strong>
             <span class="text-[10px] text-slate-400">ขั้นต่ำ 49 บาท</span>
           </div>
-          <input id="paymentAmount" type="number" min="49" step="1" value="49" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white text-sm" />
+          <label class="block text-[11px] text-slate-400">ยอดสนับสนุนที่ต้องการ</label>
+          <input id="paymentAmount" type="number" min="49" step="1" value="49" inputmode="decimal" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white text-sm" />
+          <div id="paymentQrPanel" class="hidden rounded-2xl bg-white p-3 text-center space-y-2">
+            <canvas id="paymentQrCanvas" class="mx-auto rounded-xl"></canvas>
+            <div class="text-slate-900 text-xs font-bold">สแกนจ่ายผ่าน PromptPay</div>
+            <div id="paymentQrTarget" class="text-slate-600 text-[11px]"></div>
+            <div id="paymentQrAmount" class="text-slate-900 text-sm font-extrabold"></div>
+          </div>
+          <label class="block text-[11px] text-slate-400">แนบสลิปการโอนเงิน</label>
+          <input id="paymentSlipFile" type="file" accept="image/*,application/pdf" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-slate-300 text-xs file:mr-2 file:rounded-lg file:border-0 file:bg-amber-400 file:px-2.5 file:py-1.5 file:font-bold file:text-slate-950" />
+          <div id="paymentSlipPreview" class="hidden rounded-xl bg-slate-950 border border-slate-800 p-2 text-xs text-slate-300"></div>
           <input id="paymentNote" type="text" maxlength="120" placeholder="หมายเหตุหรือเลขอ้างอิงการโอน (ถ้ามี)" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white text-sm" />
-          <button id="btnSubmitPayment" class="w-full gold-gradient text-slate-950 font-extrabold text-sm py-2.5 rounded-xl tap-card">ส่งคำขอให้แอดมินตรวจสอบ</button>
-          <p class="text-[10px] text-slate-500">ขั้นนี้บันทึกคำขอและหมายเหตุไว้ก่อน ระบบแนบสลิปโดยตรงจะเพิ่มในขั้นถัดไป</p>
+          <button id="btnSubmitPayment" disabled class="w-full gold-gradient text-slate-950 font-extrabold text-sm py-2.5 rounded-xl tap-card disabled:opacity-50 disabled:cursor-not-allowed">ยืนยันและส่งคำขอให้แอดมินตรวจสอบ</button>
+          <p class="text-[10px] text-slate-500">ระบบจะสร้าง QR ตามยอดที่กรอก และแนบสลิปไปพร้อมคำขอให้แอดมินตรวจสอบ</p>
         </div>
 
         <div id="latestPaymentBox" class="hidden p-3 rounded-xl bg-slate-950 border border-slate-800 text-xs leading-relaxed"></div>
@@ -1595,6 +1606,8 @@
     // ============================================================================
     const SUPABASE_URL = "https://kwwriwodgrpcjocselhq.supabase.co";
     const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_K3ai82xEGmCRiWC9Y5lDLg_RF3_I_7T";
+    const PROMPTPAY_PHONE = "0825424340";
+    const PAYMENT_SLIP_BUCKET = "payment-slips";
     const supabaseClient = window.supabase?.createClient
       ? window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY)
       : null;
@@ -1624,6 +1637,80 @@
         .replaceAll(">", "&gt;")
         .replaceAll('"', "&quot;")
         .replaceAll("'", "&#039;");
+    }
+
+    function crc16Ccitt(input) {
+      let crc = 0xffff;
+      for (let i = 0; i < input.length; i++) {
+        crc ^= input.charCodeAt(i) << 8;
+        for (let bit = 0; bit < 8; bit++) {
+          crc = (crc & 0x8000) ? ((crc << 1) ^ 0x1021) & 0xffff : (crc << 1) & 0xffff;
+        }
+      }
+      return crc.toString(16).toUpperCase().padStart(4, "0");
+    }
+
+    function promptPayTlv(tag, value) {
+      return `${tag}${String(value.length).padStart(2, "0")}${value}`;
+    }
+
+    function buildPromptPayPayload(amount) {
+      const mobile = `0066${PROMPTPAY_PHONE.replace(/^0/, "")}`;
+      const merchantAccount = promptPayTlv("00", "A000000677010111") + promptPayTlv("01", mobile);
+      const amountText = Number(amount).toFixed(2);
+      const body = [
+        promptPayTlv("00", "01"),
+        promptPayTlv("01", "12"),
+        promptPayTlv("29", merchantAccount),
+        promptPayTlv("53", "764"),
+        promptPayTlv("54", amountText),
+        promptPayTlv("58", "TH"),
+        "6304"
+      ].join("");
+      return `${body}${crc16Ccitt(body)}`;
+    }
+
+    function renderPaymentSubmitState() {
+      const amount = Number(document.getElementById("paymentAmount")?.value || 0);
+      const file = document.getElementById("paymentSlipFile")?.files?.[0];
+      const button = document.getElementById("btnSubmitPayment");
+      if (button) button.disabled = !currentAuthUser || !Number.isFinite(amount) || amount < 49 || !file;
+    }
+
+    async function renderPromptPayQr() {
+      const amount = Number(document.getElementById("paymentAmount")?.value || 0);
+      const panel = document.getElementById("paymentQrPanel");
+      const canvas = document.getElementById("paymentQrCanvas");
+      const amountLabel = document.getElementById("paymentQrAmount");
+      const targetLabel = document.getElementById("paymentQrTarget");
+      if (!panel || !canvas || !amountLabel || !targetLabel) return;
+      if (!Number.isFinite(amount) || amount < 49) {
+        panel.classList.add("hidden");
+        renderPaymentSubmitState();
+        return;
+      }
+      panel.classList.remove("hidden");
+      targetLabel.textContent = `พร้อมเพย์ ${PROMPTPAY_PHONE}`;
+      amountLabel.textContent = `${amount.toFixed(2)} บาท`;
+      if (window.QRCode?.toCanvas) {
+        await window.QRCode.toCanvas(canvas, buildPromptPayPayload(amount), { width: 220, margin: 1 });
+      }
+      renderPaymentSubmitState();
+    }
+
+    function handlePaymentSlipChange(event) {
+      const file = event.target.files?.[0];
+      const preview = document.getElementById("paymentSlipPreview");
+      if (!preview) return;
+      if (!file) {
+        preview.classList.add("hidden");
+        preview.textContent = "";
+        renderPaymentSubmitState();
+        return;
+      }
+      preview.textContent = `ไฟล์ที่เลือก: ${file.name} (${Math.ceil(file.size / 1024)} KB)`;
+      preview.classList.remove("hidden");
+      renderPaymentSubmitState();
     }
 
     function setInlineMessage(id, message, kind = "info") {
@@ -1857,28 +1944,59 @@
       if (!currentAuthUser) return;
       const amount = Number(document.getElementById("paymentAmount")?.value || 0);
       const referenceNote = document.getElementById("paymentNote")?.value.trim() || null;
+      const slipFile = document.getElementById("paymentSlipFile")?.files?.[0];
       if (!Number.isFinite(amount) || amount < 49) {
         setInlineMessage("memberMessage", "จำนวนเงินต้องไม่น้อยกว่า 49 บาท", "error");
         return;
       }
+      if (!slipFile) {
+        setInlineMessage("memberMessage", "กรุณาแนบสลิปก่อนส่งคำขอ", "error");
+        return;
+      }
       const button = document.getElementById("btnSubmitPayment");
       if (button) button.disabled = true;
+      let slipPath = null;
+      let paymentCreated = false;
       try {
-        const { error } = await supabaseClient.from("exam_payments").insert({
+        const fileExtension = (slipFile.name.split(".").pop() || "bin").toLowerCase().replace(/[^a-z0-9]/g, "");
+        slipPath = `${currentAuthUser.id}/${crypto.randomUUID()}.${fileExtension || "bin"}`;
+        const { error: uploadError } = await supabaseClient.storage
+          .from(PAYMENT_SLIP_BUCKET)
+          .upload(slipPath, slipFile, { contentType: slipFile.type || "application/octet-stream", upsert: false });
+        if (uploadError) throw uploadError;
+
+        const { data: payment, error } = await supabaseClient.from("exam_payments").insert({
           user_id: currentAuthUser.id,
           amount,
           reference_note,
+          slip_path: slipPath,
           status: "pending"
-        });
+        }).select("id").single();
         if (error) throw error;
+        paymentCreated = true;
+        const { error: notifyError } = await supabaseClient.functions.invoke("payment-approval", {
+          body: { payment_id: payment.id }
+        });
         await loadMembershipState(currentAuthUser);
         renderMembershipPanel();
-        setInlineMessage("memberMessage", "ส่งคำขอแล้ว แอดมินจะตรวจสอบและปรับสถานะให้", "info");
+        if (notifyError) {
+          console.error("Payment email notification error", notifyError);
+          setInlineMessage("memberMessage", "บันทึกคำขอและสลิปแล้ว แต่ส่งอีเมลแจ้งแอดมินไม่สำเร็จ กรุณาแจ้งแอดมินให้ตรวจสอบในระบบ", "error");
+        } else {
+          setInlineMessage("memberMessage", "ส่งคำขอพร้อมสลิปแล้ว ระบบส่งอีเมลให้แอดมินตรวจสอบเรียบร้อย", "info");
+        }
+        const slipInput = document.getElementById("paymentSlipFile");
+        if (slipInput) slipInput.value = "";
+        const slipPreview = document.getElementById("paymentSlipPreview");
+        if (slipPreview) { slipPreview.classList.add("hidden"); slipPreview.textContent = ""; }
       } catch (error) {
         console.error("Payment request error", error);
+        if (slipPath && !paymentCreated) {
+          await supabaseClient.storage.from(PAYMENT_SLIP_BUCKET).remove([slipPath]).catch(() => {});
+        }
         setInlineMessage("memberMessage", error.message || "ส่งคำขอไม่สำเร็จ", "error");
       } finally {
-        if (button) button.disabled = false;
+        renderPaymentSubmitState();
       }
     }
 
@@ -1939,6 +2057,11 @@
         if (profileError) throw profileError;
         if (paymentError) throw paymentError;
         const paymentByUser = new Map((payments || []).map(payment => [payment.user_id, payment]));
+        const slipUrlByPath = new Map();
+        await Promise.all([...new Set((payments || []).map(payment => payment.slip_path).filter(Boolean))].map(async (path) => {
+          const { data: signed, error: signedError } = await supabaseClient.storage.from(PAYMENT_SLIP_BUCKET).createSignedUrl(path, 3600);
+          if (!signedError && signed?.signedUrl) slipUrlByPath.set(path, signed.signedUrl);
+        }));
         if (!queue) return;
         if (!profiles?.length) {
           queue.innerHTML = '<div class="text-sm text-slate-400 p-3 rounded-xl bg-slate-950 border border-slate-800">ยังไม่มีสมาชิกในระบบ</div>';
@@ -1955,6 +2078,7 @@
             </div>
             <div class="text-xs text-slate-300">คำขอชำระเงิน: <strong>${escapeHtml(paymentLabels[paymentStatus] || paymentStatus)}</strong>${payment ? ` · ${escapeHtml(payment.amount)} บาท · ${escapeHtml(payment.reference_note || "ไม่มีหมายเหตุ")}` : ""}</div>
             <div class="flex flex-wrap gap-1.5">
+              ${payment?.slip_path && slipUrlByPath.get(payment.slip_path) ? `<a href="${escapeHtml(slipUrlByPath.get(payment.slip_path))}" target="_blank" rel="noopener" class="bg-violet-500/20 border border-violet-400/40 text-violet-200 px-2.5 py-1.5 rounded-lg text-[11px] font-bold">ดูสลิป</a>` : ""}
               ${payment && payment.status === "pending" ? `<button data-admin-payment="approved" data-payment-id="${escapeHtml(payment.id)}" data-user-id="${escapeHtml(profile.user_id)}" class="bg-emerald-500/20 border border-emerald-400/40 text-emerald-200 px-2.5 py-1.5 rounded-lg text-[11px] font-bold">อนุมัติการชำระ</button><button data-admin-payment="rejected" data-payment-id="${escapeHtml(payment.id)}" data-user-id="${escapeHtml(profile.user_id)}" class="bg-rose-500/20 border border-rose-400/40 text-rose-200 px-2.5 py-1.5 rounded-lg text-[11px] font-bold">ปฏิเสธ</button>` : ""}
               ${accessStatus !== "approved" ? `<button data-admin-access="approved" data-user-id="${escapeHtml(profile.user_id)}" class="bg-sky-500/20 border border-sky-400/40 text-sky-200 px-2.5 py-1.5 rounded-lg text-[11px] font-bold">อนุมัติสิทธิ์</button>` : ""}
               ${accessStatus === "approved" ? `<button data-admin-access="revoked" data-user-id="${escapeHtml(profile.user_id)}" class="bg-slate-800 border border-slate-600 text-slate-200 px-2.5 py-1.5 rounded-lg text-[11px] font-bold">ระงับสิทธิ์</button>` : ""}
@@ -3009,6 +3133,9 @@
       document.getElementById("btnSubmitAuth")?.addEventListener("click", submitAuthForm);
       document.getElementById("btnSignInGoogle")?.addEventListener("click", signInWithGoogle);
       document.getElementById("btnSubmitPayment")?.addEventListener("click", submitPaymentRequest);
+      document.getElementById("paymentAmount")?.addEventListener("input", renderPromptPayQr);
+      document.getElementById("paymentSlipFile")?.addEventListener("change", handlePaymentSlipChange);
+      renderPromptPayQr();
       document.getElementById("btnSignOut")?.addEventListener("click", async () => {
         const { error } = await supabaseClient.auth.signOut();
         if (error) setInlineMessage("memberMessage", error.message || "ออกจากระบบไม่สำเร็จ", "error");
