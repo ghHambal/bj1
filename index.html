@@ -680,6 +680,7 @@
   <!-- Toast Notification (Positioned above mobile bottom nav) -->
   <div id="toastBox" class="fixed bottom-20 left-1/2 -translate-x-1/2 z-50 hidden bg-emerald-400 text-slate-950 font-extrabold text-xs px-4 py-2.5 rounded-2xl shadow-2xl border border-white/20 max-w-[90vw] text-center"></div>
 
+  <script src="./questions.js"></script>
   <script>
     // ============================================================================
     // 1. คลังข้อสอบจริงและแนวข้อสอบมาตรฐานศูนย์สอบ ม.ธรรมศาสตร์ (ครบทั้ง 6 วิชาหลัก)
@@ -1323,6 +1324,9 @@
         tip: "⚡ จำแม่น: เด็กปฐมวัย = ต่ำกว่า 6 ปีบริบูรณ์ | เด็กตาม พ.ร.บ.คุ้มครองเด็ก = ต่ำกว่า 18 ปีบริบูรณ์ (ยังไม่บรรลุนิติภาวะด้วยการสมรส)"
       }
     );
+    if (Array.isArray(window.SIMULATED_QUESTIONS)) {
+      QUESTION_BANK.push(...window.SIMULATED_QUESTIONS);
+    }
     // ============================================================================
     // 2. คลังคัมภีร์สูตรเด็ด & สรุปเก็งจุดออกสอบ 100% (จากไฟล์ติวทั้ง 7 ไฟล์)
     // ============================================================================
@@ -1840,6 +1844,15 @@
     let examElapsedSecs = 0;
     let examTimerInterval = null;
 
+    function shuffleQuestions(list) {
+      const shuffled = list.slice();
+      for (let i = shuffled.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+      }
+      return shuffled;
+    }
+
     function startNewExamSession() {
       const subj = document.getElementById("examSubjectSelect").value;
       const mode = document.getElementById("examModeSelect").value;
@@ -1866,7 +1879,7 @@
         }
       }
 
-      currentExamList = pool.slice(0, count);
+      currentExamList = shuffleQuestions(pool).slice(0, Math.min(count, pool.length));
       currentQIndex = 0;
 
       if (examTimerInterval) clearInterval(examTimerInterval);
