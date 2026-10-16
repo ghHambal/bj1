@@ -99,6 +99,22 @@
 </head>
 <body class="min-h-screen bg-slate-950 text-slate-50 selection:bg-amber-400 selection:text-slate-950">
 
+  <!-- AUTH GATE: the app is shown only after authentication and approval -->
+  <div id="authGate" class="fixed inset-0 z-50 bg-slate-950/98 backdrop-blur-xl flex items-center justify-center p-5">
+    <div class="tu-card rounded-3xl max-w-md w-full p-6 sm:p-8 text-center space-y-5 border border-violet-400/35 shadow-2xl shadow-black/50">
+      <div class="mx-auto w-16 h-16 rounded-3xl gold-gradient flex items-center justify-center text-slate-950 font-extrabold text-xl shadow-lg">มธ.</div>
+      <div>
+        <h2 class="text-xl font-extrabold text-amber-300">พิชิตที่ 1 ครูผู้ช่วย 69</h2>
+        <p class="text-sm text-slate-300 mt-1">เข้าสู่ระบบเพื่อเปิดใช้งานแอปและซิงก์ความคืบหน้าข้ามเครื่อง</p>
+      </div>
+      <div id="authGateMessage" class="p-3 rounded-2xl bg-slate-950 border border-slate-800 text-xs text-slate-300 leading-relaxed">
+        กรุณาเข้าสู่ระบบก่อนใช้งาน
+      </div>
+      <button id="btnGateOpenAuth" class="w-full bg-violet-500 hover:bg-violet-400 text-white font-extrabold text-sm py-3 rounded-xl tap-card">เข้าสู่ระบบ / สมัครสมาชิก</button>
+      <p class="text-[10px] text-slate-500 leading-relaxed">ข้อมูลการทำข้อสอบของสมาชิกจะบันทึกในฐานข้อมูลเป็นหลัก และมี Local Storage เป็นแคชสำรอง</p>
+    </div>
+  </div>
+
   <!-- MOBILE APP SHELL WRAPPER -->
   <div id="appShellContainer" class="app-frame-mobile min-h-screen bg-slate-900/95 flex flex-col relative pb-24 transition-all duration-300">
 
@@ -1636,6 +1652,26 @@
       return "bg-amber-500/20 border border-amber-400/40 text-amber-200";
     }
 
+    function renderAuthGate() {
+      const gate = document.getElementById("authGate");
+      const message = document.getElementById("authGateMessage");
+      if (!gate || !message) return;
+      const signedIn = Boolean(currentAuthUser);
+      const isAdmin = currentAuthUser?.app_metadata?.exam_role === "admin";
+      const status = currentMemberProfile?.access_status || "pending";
+      const canUseApp = isAdmin || status === "approved";
+      gate.classList.toggle("hidden", canUseApp);
+      if (canUseApp) return;
+      if (!signedIn) {
+        message.textContent = "กรุณาเข้าสู่ระบบก่อนใช้งาน";
+        message.className = "p-3 rounded-2xl bg-slate-950 border border-slate-800 text-xs text-slate-300 leading-relaxed";
+        return;
+      }
+      const label = membershipLabels[status] || status;
+      message.innerHTML = `บัญชี <strong class="text-white">${escapeHtml(currentAuthUser.email || "สมาชิก")}</strong><br>สถานะการใช้งาน: <strong class="${status === "rejected" || status === "revoked" ? "text-rose-300" : "text-amber-300"}">${escapeHtml(label)}</strong><br><span class="text-slate-400">เปิดบัญชีสมาชิกเพื่อส่งคำขอชำระเงินและรอแอดมินอนุมัติ</span>`;
+      message.className = "p-3 rounded-2xl bg-slate-950 border border-amber-500/25 text-xs text-slate-300 leading-relaxed";
+    }
+
     async function ensureMemberProfile(user) {
       const { data, error } = await supabaseClient
         .from("exam_member_profiles")
@@ -1679,6 +1715,7 @@
       document.getElementById("authSignedInPanel")?.classList.toggle("hidden", !signedIn);
       const label = document.getElementById("authStatusLabel");
       if (label) label.textContent = signedIn ? "บัญชีสมาชิก" : "เข้าสู่ระบบ";
+      renderAuthGate();
       if (!signedIn) return;
 
       const email = document.getElementById("authUserEmail");
@@ -1698,6 +1735,7 @@
       }
       const isAdmin = currentAuthUser.app_metadata?.exam_role === "admin";
       document.getElementById("btnOpenAdmin")?.classList.toggle("hidden", !isAdmin);
+      renderAuthGate();
     }
 
     async function refreshAuthSession(session) {
@@ -2845,13 +2883,15 @@
       // Member account, payment request, and admin review controls
       const authModal = document.getElementById("authModal");
       const adminModal = document.getElementById("adminModal");
-      document.getElementById("btnOpenAuth")?.addEventListener("click", async () => {
+      const openAuthModal = async () => {
         renderMembershipPanel();
         authModal?.classList.remove("hidden");
         if (currentAuthUser) {
           try { await loadMembershipState(currentAuthUser); renderMembershipPanel(); } catch (error) { setInlineMessage("memberMessage", "โหลดสถานะสมาชิกไม่สำเร็จ", "error"); }
         }
-      });
+      };
+      document.getElementById("btnOpenAuth")?.addEventListener("click", openAuthModal);
+      document.getElementById("btnGateOpenAuth")?.addEventListener("click", openAuthModal);
       document.getElementById("btnCloseAuth")?.addEventListener("click", () => authModal?.classList.add("hidden"));
       document.getElementById("btnAuthModeLogin")?.addEventListener("click", () => setAuthMode("login"));
       document.getElementById("btnAuthModeSignup")?.addEventListener("click", () => setAuthMode("signup"));
