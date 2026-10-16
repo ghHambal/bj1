@@ -6,6 +6,7 @@
     window.EXTRA_QUESTIONS,
     window.BATCH4_QUESTIONS,
     window.BATCH5_QUESTIONS,
+    window.BATCH6_QUESTIONS,
   ].filter(Array.isArray);
   const questions = sources.flat();
   if (!questions.length) return;
@@ -136,6 +137,14 @@
         "ชัดเจน กระชับ สุภาพ แต่ไม่ต้องระบุผู้รับผิดชอบ",
         "ใช้ภาษาพูดเพื่อให้เป็นกันเองกับผู้รับ",
         "ระบุเฉพาะข้อสรุปโดยไม่ต้องแสดงรายละเอียดที่เกี่ยวข้อง",
+        ...existingWrong,
+      ]).filter((candidate) => key(candidate) !== key(answer)).slice(0, count);
+    }
+    if (/ข้อมูลป้อนกลับ.*พัฒนา/u.test(prompt)) {
+      return unique([
+        "ทำได้ดี แต่ควรอธิบายเหตุผลของคำตอบให้ชัดขึ้น",
+        "คำตอบยังไม่ถูกต้อง ควรกลับไปอ่านบทเรียนใหม่ทั้งหมด",
+        "ได้คะแนนดีมาก จึงไม่จำเป็นต้องปรับปรุงอะไร",
         ...existingWrong,
       ]).filter((candidate) => key(candidate) !== key(answer)).slice(0, count);
     }
