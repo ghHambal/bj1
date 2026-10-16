@@ -1,4 +1,4 @@
-const CACHE_NAME = "kru-helper-69-shell-v2";
+const CACHE_NAME = "kru-helper-69-shell-v3";
 const APP_SHELL = [
   "./",
   "./index.html",

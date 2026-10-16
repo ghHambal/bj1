@@ -14,6 +14,7 @@
   <link rel="apple-touch-icon" sizes="180x180" href="./icon-180.png" />
   <script src="https://cdn.tailwindcss.com/3.4.17"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.118.0/dist/umd/supabase.min.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Sarabun:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
@@ -142,6 +143,12 @@
           <button id="btnOpenTahajjudModal" class="bg-sky-950/90 hover:bg-sky-900 border border-sky-400/40 text-sky-200 text-[11px] font-semibold px-2.5 py-1.5 rounded-xl flex items-center gap-1 transition tap-card" title="ตั้งค่าโหมดตื่นเช้าและตารางชีวิต">
             <span>🌙</span>
             <span class="truncate max-w-[92px] sm:max-w-none">ตั้งค่าโหมดตื่นเช้า & ตารางชีวิต</span>
+          </button>
+
+          <!-- Member account and payment status -->
+          <button id="btnOpenAuth" class="bg-violet-950/90 hover:bg-violet-900 border border-violet-400/40 text-violet-200 text-[11px] font-semibold px-2.5 py-1.5 rounded-xl flex items-center gap-1 transition tap-card" title="สมัครสมาชิกหรือดูสถานะการใช้งาน">
+            <span>👤</span>
+            <span id="authStatusLabel" class="truncate max-w-[92px] sm:max-w-none">เข้าสู่ระบบ</span>
           </button>
 
           <!-- Toggle Mobile / Expanded Width (Useful on Tablet/Desktop) -->
@@ -684,6 +691,83 @@
       <button id="btnSaveTahajjudSettings" class="w-full gold-gradient text-slate-950 font-extrabold text-xs sm:text-sm py-3 rounded-xl shadow-lg tap-card">
         💾 บันทึกตารางชีวิต & อัปเดตแผนทั้งหมด
       </button>
+    </div>
+  </div>
+
+  <!-- MEMBER AUTH / PAYMENT MODAL -->
+  <div id="authModal" class="fixed inset-0 z-[60] hidden bg-slate-950/85 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4">
+    <div class="tu-card rounded-t-3xl sm:rounded-2xl max-w-md w-full p-5 space-y-4 border-t sm:border border-violet-400/40 max-h-[92vh] overflow-y-auto">
+      <div class="flex items-center justify-between border-b border-slate-700 pb-3">
+        <div>
+          <h3 class="text-base font-extrabold text-violet-200">👤 สมาชิกแอปเตรียมสอบ</h3>
+          <p id="authModalSubtitle" class="text-[11px] text-slate-400 mt-0.5">เข้าสู่ระบบเพื่อส่งคำขอใช้งาน</p>
+        </div>
+        <button id="btnCloseAuth" class="w-8 h-8 rounded-full bg-slate-800 text-slate-300 hover:text-white flex items-center justify-center font-bold">✕</button>
+      </div>
+
+      <div id="authSignedOutPanel" class="space-y-3">
+        <div class="grid grid-cols-2 gap-2 p-1 rounded-xl bg-slate-950 border border-slate-800">
+          <button id="btnAuthModeLogin" class="auth-mode-btn tab-active py-2 rounded-lg text-xs font-bold">เข้าสู่ระบบ</button>
+          <button id="btnAuthModeSignup" class="auth-mode-btn py-2 rounded-lg text-xs font-bold text-slate-400">สมัครสมาชิก</button>
+        </div>
+        <div id="signupNameField" class="hidden">
+          <label class="block text-xs text-slate-300 mb-1">ชื่อที่ใช้แสดง</label>
+          <input id="authDisplayName" type="text" autocomplete="name" placeholder="เช่น ครูฮัมบาล" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white text-sm" />
+        </div>
+        <div>
+          <label class="block text-xs text-slate-300 mb-1">อีเมล</label>
+          <input id="authEmail" type="email" autocomplete="email" placeholder="you@example.com" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white text-sm" />
+        </div>
+        <div>
+          <label class="block text-xs text-slate-300 mb-1">รหัสผ่าน</label>
+          <input id="authPassword" type="password" autocomplete="current-password" minlength="6" placeholder="อย่างน้อย 6 ตัวอักษร" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white text-sm" />
+        </div>
+        <button id="btnSubmitAuth" class="w-full bg-violet-500 hover:bg-violet-400 text-white font-extrabold text-sm py-3 rounded-xl tap-card">เข้าสู่ระบบ</button>
+        <p id="authMessage" class="hidden text-xs leading-relaxed rounded-xl p-3"></p>
+        <p class="text-[10px] text-slate-500 leading-relaxed">ระบบสมาชิกใช้ Supabase Auth ส่วนความคืบหน้าการทำข้อสอบยังเก็บไว้ในเครื่องของผู้ใช้แต่ละคนเหมือนเดิม</p>
+      </div>
+
+      <div id="authSignedInPanel" class="hidden space-y-3">
+        <div class="p-3 rounded-xl bg-slate-950 border border-slate-800">
+          <div class="text-[11px] text-slate-400">บัญชี</div>
+          <div id="authUserEmail" class="text-sm font-bold text-white break-all"></div>
+          <div id="membershipStatusBadge" class="inline-flex mt-2 px-2.5 py-1 rounded-lg text-[11px] font-bold"></div>
+        </div>
+
+        <div class="p-3 rounded-xl bg-slate-900/80 border border-amber-500/25 space-y-2.5">
+          <div class="flex items-center justify-between gap-2">
+            <strong class="text-sm text-amber-300">ส่งคำขอชำระค่าพัฒนา/ค่ากาแฟ</strong>
+            <span class="text-[10px] text-slate-400">ขั้นต่ำ 49 บาท</span>
+          </div>
+          <input id="paymentAmount" type="number" min="49" step="1" value="49" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white text-sm" />
+          <input id="paymentNote" type="text" maxlength="120" placeholder="หมายเหตุหรือเลขอ้างอิงการโอน (ถ้ามี)" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white text-sm" />
+          <button id="btnSubmitPayment" class="w-full gold-gradient text-slate-950 font-extrabold text-sm py-2.5 rounded-xl tap-card">ส่งคำขอให้แอดมินตรวจสอบ</button>
+          <p class="text-[10px] text-slate-500">ขั้นนี้บันทึกคำขอและหมายเหตุไว้ก่อน ระบบแนบสลิปโดยตรงจะเพิ่มในขั้นถัดไป</p>
+        </div>
+
+        <div id="latestPaymentBox" class="hidden p-3 rounded-xl bg-slate-950 border border-slate-800 text-xs leading-relaxed"></div>
+        <button id="btnOpenAdmin" class="hidden w-full bg-rose-950/80 hover:bg-rose-900 text-rose-200 border border-rose-400/40 font-bold text-sm py-2.5 rounded-xl tap-card">🛡️ เปิดหน้าตรวจสอบแอดมิน</button>
+        <button id="btnSignOut" class="w-full bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 font-bold text-sm py-2.5 rounded-xl tap-card">ออกจากระบบ</button>
+        <p id="memberMessage" class="hidden text-xs leading-relaxed rounded-xl p-3"></p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ADMIN REVIEW MODAL -->
+  <div id="adminModal" class="fixed inset-0 z-[70] hidden bg-slate-950/90 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4">
+    <div class="tu-card rounded-t-3xl sm:rounded-2xl max-w-3xl w-full p-5 space-y-4 border-t sm:border border-rose-400/40 max-h-[92vh] overflow-y-auto">
+      <div class="flex items-center justify-between border-b border-slate-700 pb-3">
+        <div>
+          <h3 class="text-base font-extrabold text-rose-200">🛡️ ตรวจสอบสมาชิกและคำขอชำระเงิน</h3>
+          <p class="text-[11px] text-slate-400 mt-0.5">แสดงเฉพาะเมื่อบัญชีนี้ได้รับบทบาทแอดมินใน Supabase</p>
+        </div>
+        <button id="btnCloseAdmin" class="w-8 h-8 rounded-full bg-slate-800 text-slate-300 hover:text-white flex items-center justify-center font-bold">✕</button>
+      </div>
+      <div class="flex items-center justify-between gap-2">
+        <p id="adminMessage" class="hidden text-xs leading-relaxed rounded-xl p-3 flex-1"></p>
+        <button id="btnRefreshAdmin" class="shrink-0 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 font-bold text-xs px-3 py-2 rounded-xl tap-card">รีเฟรชรายการ</button>
+      </div>
+      <div id="adminQueue" class="space-y-3"></div>
     </div>
   </div>
 
@@ -1487,6 +1571,428 @@
     // ============================================================================
     const STORAGE_KEY = "kru_tu_rank1_prep_state_v1";
 
+    // ============================================================================
+    // 4.1 ระบบสมาชิกและคำขอชำระเงิน (Supabase Auth + RLS)
+    // ข้อมูลความคืบหน้าการทำข้อสอบยังคงอยู่ใน localStorage แยกจากส่วนสมาชิก
+    // ============================================================================
+    const SUPABASE_URL = "https://kwwriwodgrpcjocselhq.supabase.co";
+    const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_K3ai82xEGmCRiWC9Y5lDLg_RF3_I_7T";
+    const supabaseClient = window.supabase?.createClient
+      ? window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY)
+      : null;
+    const membershipLabels = {
+      pending: "รอตรวจสอบ",
+      approved: "อนุมัติแล้ว",
+      rejected: "ไม่อนุมัติ",
+      revoked: "ถูกระงับ"
+    };
+    const paymentLabels = { pending: "รอตรวจสอบ", approved: "อนุมัติ", rejected: "ไม่อนุมัติ" };
+    let currentAuthUser = null;
+    let currentMemberProfile = null;
+    let latestPayment = null;
+    let authMode = "login";
+    let progressHydratedUserId = null;
+    let progressSyncTimer = null;
+    let progressSyncInFlight = false;
+
+    function escapeHtml(value) {
+      return String(value ?? "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+
+    function setInlineMessage(id, message, kind = "info") {
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.textContent = message || "";
+      el.className = message
+        ? `text-xs leading-relaxed rounded-xl p-3 ${kind === "error" ? "bg-rose-950/70 border border-rose-400/30 text-rose-200" : "bg-emerald-950/70 border border-emerald-400/30 text-emerald-200"}`
+        : "hidden text-xs leading-relaxed rounded-xl p-3";
+    }
+
+    function setAuthMode(mode) {
+      authMode = mode;
+      const isSignup = mode === "signup";
+      document.getElementById("signupNameField")?.classList.toggle("hidden", !isSignup);
+      document.getElementById("btnAuthModeLogin")?.classList.toggle("tab-active", !isSignup);
+      document.getElementById("btnAuthModeSignup")?.classList.toggle("tab-active", isSignup);
+      document.getElementById("btnAuthModeLogin")?.classList.toggle("text-slate-400", isSignup);
+      document.getElementById("btnAuthModeSignup")?.classList.toggle("text-slate-400", !isSignup);
+      const submit = document.getElementById("btnSubmitAuth");
+      if (submit) submit.textContent = isSignup ? "สมัครสมาชิก" : "เข้าสู่ระบบ";
+      const subtitle = document.getElementById("authModalSubtitle");
+      if (subtitle) subtitle.textContent = isSignup ? "สร้างบัญชีเพื่อส่งคำขอใช้งาน" : "เข้าสู่ระบบเพื่อดูสถานะสมาชิก";
+      setInlineMessage("authMessage", "");
+    }
+
+    function membershipBadgeClass(status) {
+      if (status === "approved") return "bg-emerald-500/20 border border-emerald-400/40 text-emerald-200";
+      if (status === "rejected" || status === "revoked") return "bg-rose-500/20 border border-rose-400/40 text-rose-200";
+      return "bg-amber-500/20 border border-amber-400/40 text-amber-200";
+    }
+
+    async function ensureMemberProfile(user) {
+      const { data, error } = await supabaseClient
+        .from("exam_member_profiles")
+        .select("*")
+        .eq("user_id", user.id)
+        .maybeSingle();
+      if (error) throw error;
+      if (data) return data;
+
+      const displayName = user.user_metadata?.display_name || user.email?.split("@")[0] || "สมาชิกใหม่";
+      const { data: inserted, error: insertError } = await supabaseClient
+        .from("exam_member_profiles")
+        .insert({ user_id: user.id, display_name: displayName })
+        .select("*")
+        .single();
+      if (insertError) throw insertError;
+      return inserted;
+    }
+
+    async function loadMembershipState(user) {
+      if (!user) {
+        currentMemberProfile = null;
+        latestPayment = null;
+        return;
+      }
+      currentMemberProfile = await ensureMemberProfile(user);
+      const { data, error } = await supabaseClient
+        .from("exam_payments")
+        .select("*")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (error) throw error;
+      latestPayment = data || null;
+    }
+
+    function renderMembershipPanel() {
+      const signedIn = Boolean(currentAuthUser);
+      document.getElementById("authSignedOutPanel")?.classList.toggle("hidden", signedIn);
+      document.getElementById("authSignedInPanel")?.classList.toggle("hidden", !signedIn);
+      const label = document.getElementById("authStatusLabel");
+      if (label) label.textContent = signedIn ? "บัญชีสมาชิก" : "เข้าสู่ระบบ";
+      if (!signedIn) return;
+
+      const email = document.getElementById("authUserEmail");
+      if (email) email.textContent = currentAuthUser.email || "บัญชีผู้ใช้";
+      const status = currentMemberProfile?.access_status || "pending";
+      const badge = document.getElementById("membershipStatusBadge");
+      if (badge) {
+        badge.className = `inline-flex mt-2 px-2.5 py-1 rounded-lg text-[11px] font-bold ${membershipBadgeClass(status)}`;
+        badge.textContent = `สถานะการใช้งาน: ${membershipLabels[status] || status}`;
+      }
+      const latestBox = document.getElementById("latestPaymentBox");
+      if (latestBox) {
+        latestBox.classList.toggle("hidden", !latestPayment);
+        if (latestPayment) {
+          latestBox.innerHTML = `คำขอล่าสุด: <strong>${escapeHtml(paymentLabels[latestPayment.status] || latestPayment.status)}</strong><br>จำนวนเงิน ${escapeHtml(latestPayment.amount)} บาท<br><span class="text-slate-400">${escapeHtml(latestPayment.reference_note || "ไม่มีหมายเหตุ")}</span>`;
+        }
+      }
+      const isAdmin = currentAuthUser.app_metadata?.exam_role === "admin";
+      document.getElementById("btnOpenAdmin")?.classList.toggle("hidden", !isAdmin);
+    }
+
+    async function refreshAuthSession(session) {
+      currentAuthUser = session?.user || null;
+      try {
+        await loadMembershipState(currentAuthUser);
+        if (currentAuthUser) await syncProgressForUser(currentAuthUser);
+        else progressHydratedUserId = null;
+        renderMembershipPanel();
+        if (currentAuthUser) refreshProgressDrivenViews();
+      } catch (error) {
+        console.error("Membership state error", error);
+        setInlineMessage("authMessage", "เชื่อมต่อข้อมูลสมาชิกไม่สำเร็จ กรุณาลองใหม่อีกครั้ง", "error");
+      }
+    }
+
+    async function submitAuthForm() {
+      const email = document.getElementById("authEmail")?.value.trim();
+      const password = document.getElementById("authPassword")?.value;
+      const displayName = document.getElementById("authDisplayName")?.value.trim();
+      if (!email || !password) {
+        setInlineMessage("authMessage", "กรุณากรอกอีเมลและรหัสผ่าน", "error");
+        return;
+      }
+      const button = document.getElementById("btnSubmitAuth");
+      if (button) button.disabled = true;
+      setInlineMessage("authMessage", "กำลังดำเนินการ...", "info");
+      try {
+        if (authMode === "signup") {
+          const { data, error } = await supabaseClient.auth.signUp({
+            email,
+            password,
+            options: { data: { display_name: displayName || email.split("@")[0] } }
+          });
+          if (error) throw error;
+          if (!data.session) {
+            setInlineMessage("authMessage", "สมัครสมาชิกแล้ว กรุณาตรวจอีเมลเพื่อยืนยันบัญชีก่อนเข้าสู่ระบบ", "info");
+          } else {
+            await refreshAuthSession(data.session);
+            setInlineMessage("authMessage", "สมัครสมาชิกสำเร็จ", "info");
+          }
+        } else {
+          const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+          if (error) throw error;
+          await refreshAuthSession(data.session);
+          setInlineMessage("authMessage", "เข้าสู่ระบบสำเร็จ", "info");
+        }
+      } catch (error) {
+        console.error("Auth error", error);
+        setInlineMessage("authMessage", error.message || "ดำเนินการไม่สำเร็จ กรุณาตรวจสอบข้อมูลอีกครั้ง", "error");
+      } finally {
+        if (button) button.disabled = false;
+      }
+    }
+
+    async function submitPaymentRequest() {
+      if (!currentAuthUser) return;
+      const amount = Number(document.getElementById("paymentAmount")?.value || 0);
+      const referenceNote = document.getElementById("paymentNote")?.value.trim() || null;
+      if (!Number.isFinite(amount) || amount < 49) {
+        setInlineMessage("memberMessage", "จำนวนเงินต้องไม่น้อยกว่า 49 บาท", "error");
+        return;
+      }
+      const button = document.getElementById("btnSubmitPayment");
+      if (button) button.disabled = true;
+      try {
+        const { error } = await supabaseClient.from("exam_payments").insert({
+          user_id: currentAuthUser.id,
+          amount,
+          reference_note,
+          status: "pending"
+        });
+        if (error) throw error;
+        await loadMembershipState(currentAuthUser);
+        renderMembershipPanel();
+        setInlineMessage("memberMessage", "ส่งคำขอแล้ว แอดมินจะตรวจสอบและปรับสถานะให้", "info");
+      } catch (error) {
+        console.error("Payment request error", error);
+        setInlineMessage("memberMessage", error.message || "ส่งคำขอไม่สำเร็จ", "error");
+      } finally {
+        if (button) button.disabled = false;
+      }
+    }
+
+    async function writeAdminAudit(action, targetUserId, paymentId, note) {
+      const { error } = await supabaseClient.from("exam_admin_audit_logs").insert({
+        admin_user_id: currentAuthUser.id,
+        target_user_id: targetUserId,
+        payment_id: paymentId || null,
+        action,
+        note: note || null
+      });
+      if (error) throw error;
+    }
+
+    async function adminSetPayment(paymentId, targetUserId, status) {
+      try {
+        const { error } = await supabaseClient.from("exam_payments").update({
+          status,
+          reviewed_by: currentAuthUser.id,
+          reviewed_at: new Date().toISOString()
+        }).eq("id", paymentId);
+        if (error) throw error;
+        if (status === "approved") {
+          const { error: profileError } = await supabaseClient.from("exam_member_profiles").update({ access_status: "approved" }).eq("user_id", targetUserId);
+          if (profileError) throw profileError;
+        }
+        await writeAdminAudit(status === "approved" ? "approve_payment" : "reject_payment", targetUserId, paymentId, `payment status=${status}`);
+        setInlineMessage("adminMessage", "บันทึกผลตรวจสอบแล้ว", "info");
+        await loadAdminQueue();
+      } catch (error) {
+        console.error("Admin payment update error", error);
+        setInlineMessage("adminMessage", error.message || "บันทึกผลไม่สำเร็จ", "error");
+      }
+    }
+
+    async function adminSetAccess(targetUserId, status) {
+      try {
+        const { error } = await supabaseClient.from("exam_member_profiles").update({ access_status: status }).eq("user_id", targetUserId);
+        if (error) throw error;
+        await writeAdminAudit(status === "approved" ? "approve_access" : "revoke_access", targetUserId, null, `access status=${status}`);
+        setInlineMessage("adminMessage", "บันทึกสถานะสมาชิกแล้ว", "info");
+        await loadAdminQueue();
+      } catch (error) {
+        console.error("Admin access update error", error);
+        setInlineMessage("adminMessage", error.message || "บันทึกสถานะไม่สำเร็จ", "error");
+      }
+    }
+
+    async function loadAdminQueue() {
+      if (!currentAuthUser || currentAuthUser.app_metadata?.exam_role !== "admin") return;
+      const queue = document.getElementById("adminQueue");
+      if (queue) queue.innerHTML = '<div class="text-sm text-slate-400">กำลังโหลดรายการ...</div>';
+      try {
+        const [{ data: profiles, error: profileError }, { data: payments, error: paymentError }] = await Promise.all([
+          supabaseClient.from("exam_member_profiles").select("*").order("created_at", { ascending: false }),
+          supabaseClient.from("exam_payments").select("*").order("created_at", { ascending: false })
+        ]);
+        if (profileError) throw profileError;
+        if (paymentError) throw paymentError;
+        const paymentByUser = new Map((payments || []).map(payment => [payment.user_id, payment]));
+        if (!queue) return;
+        if (!profiles?.length) {
+          queue.innerHTML = '<div class="text-sm text-slate-400 p-3 rounded-xl bg-slate-950 border border-slate-800">ยังไม่มีสมาชิกในระบบ</div>';
+          return;
+        }
+        queue.innerHTML = profiles.map(profile => {
+          const payment = paymentByUser.get(profile.user_id);
+          const accessStatus = profile.access_status || "pending";
+          const paymentStatus = payment?.status || "ไม่มีคำขอ";
+          return `<article class="p-3 rounded-xl bg-slate-950 border border-slate-800 space-y-2">
+            <div class="flex items-start justify-between gap-3">
+              <div class="min-w-0"><div class="font-bold text-white truncate">${escapeHtml(profile.display_name || "ไม่ระบุชื่อ")}</div><div class="text-[10px] text-slate-500 break-all">${escapeHtml(profile.user_id)}</div></div>
+              <span class="shrink-0 px-2 py-1 rounded-lg text-[10px] font-bold ${membershipBadgeClass(accessStatus)}">${escapeHtml(membershipLabels[accessStatus] || accessStatus)}</span>
+            </div>
+            <div class="text-xs text-slate-300">คำขอชำระเงิน: <strong>${escapeHtml(paymentLabels[paymentStatus] || paymentStatus)}</strong>${payment ? ` · ${escapeHtml(payment.amount)} บาท · ${escapeHtml(payment.reference_note || "ไม่มีหมายเหตุ")}` : ""}</div>
+            <div class="flex flex-wrap gap-1.5">
+              ${payment && payment.status === "pending" ? `<button data-admin-payment="approved" data-payment-id="${escapeHtml(payment.id)}" data-user-id="${escapeHtml(profile.user_id)}" class="bg-emerald-500/20 border border-emerald-400/40 text-emerald-200 px-2.5 py-1.5 rounded-lg text-[11px] font-bold">อนุมัติการชำระ</button><button data-admin-payment="rejected" data-payment-id="${escapeHtml(payment.id)}" data-user-id="${escapeHtml(profile.user_id)}" class="bg-rose-500/20 border border-rose-400/40 text-rose-200 px-2.5 py-1.5 rounded-lg text-[11px] font-bold">ปฏิเสธ</button>` : ""}
+              ${accessStatus !== "approved" ? `<button data-admin-access="approved" data-user-id="${escapeHtml(profile.user_id)}" class="bg-sky-500/20 border border-sky-400/40 text-sky-200 px-2.5 py-1.5 rounded-lg text-[11px] font-bold">อนุมัติสิทธิ์</button>` : ""}
+              ${accessStatus === "approved" ? `<button data-admin-access="revoked" data-user-id="${escapeHtml(profile.user_id)}" class="bg-slate-800 border border-slate-600 text-slate-200 px-2.5 py-1.5 rounded-lg text-[11px] font-bold">ระงับสิทธิ์</button>` : ""}
+            </div>
+          </article>`;
+        }).join("");
+        queue.querySelectorAll("[data-admin-payment]").forEach(button => button.addEventListener("click", () => adminSetPayment(button.dataset.paymentId, button.dataset.userId, button.dataset.adminPayment)));
+        queue.querySelectorAll("[data-admin-access]").forEach(button => button.addEventListener("click", () => adminSetAccess(button.dataset.userId, button.dataset.adminAccess)));
+      } catch (error) {
+        console.error("Admin queue error", error);
+        if (queue) queue.innerHTML = '<div class="text-sm text-rose-200 p-3 rounded-xl bg-rose-950/60 border border-rose-400/30">โหลดรายการไม่สำเร็จ หรือบัญชีนี้ยังไม่ได้รับสิทธิ์แอดมิน</div>';
+      }
+    }
+
+    async function initSupabaseAuth() {
+      try {
+        const { data, error } = await supabaseClient.auth.getSession();
+        if (error) throw error;
+        await refreshAuthSession(data.session);
+        supabaseClient.auth.onAuthStateChange((_event, session) => {
+          setTimeout(() => refreshAuthSession(session), 0);
+        });
+      } catch (error) {
+        console.error("Supabase initialization error", error);
+        setInlineMessage("authMessage", "ยังเชื่อมต่อระบบสมาชิกไม่ได้ แต่โหมดฝึกทำข้อสอบยังใช้งานได้ตามปกติ", "error");
+      }
+    }
+
+    function normalizeProgressState(rawState) {
+      const parsed = rawState && typeof rawState === "object" ? rawState : {};
+      const normalized = JSON.parse(JSON.stringify(defaultState));
+      Object.assign(normalized, parsed);
+      normalized.completedDays = Object.assign({}, defaultState.completedDays, parsed.completedDays || {});
+      normalized.dailyBlocksDone = Object.assign({}, defaultState.dailyBlocksDone, parsed.dailyBlocksDone || {});
+      normalized.tahajjudDates = Object.assign({}, defaultState.tahajjudDates, parsed.tahajjudDates || {});
+      normalized.masteredTips = Object.assign({}, defaultState.masteredTips, parsed.masteredTips || {});
+      normalized.settings = Object.assign({}, defaultState.settings, parsed.settings || {});
+      normalized.quizStats = Object.assign({}, defaultState.quizStats, parsed.quizStats || {});
+      normalized.quizStats.answered = Object.assign({}, defaultState.quizStats.answered, parsed.quizStats?.answered || {});
+      normalized.quizStats.bookmarks = Object.assign({}, defaultState.quizStats.bookmarks, parsed.quizStats?.bookmarks || {});
+      normalized.simTargets = Object.assign({}, defaultState.simTargets, parsed.simTargets || {});
+      return normalized;
+    }
+
+    function hasMeaningfulProgress(state) {
+      return Boolean(
+        state?.selectedDay !== defaultState.selectedDay ||
+        state?.tahajjudLogCount ||
+        Object.keys(state?.completedDays || {}).length ||
+        Object.keys(state?.dailyBlocksDone || {}).length ||
+        Object.keys(state?.tahajjudDates || {}).length ||
+        Object.keys(state?.masteredTips || {}).length ||
+        Object.keys(state?.quizStats?.answered || {}).length ||
+        Object.keys(state?.quizStats?.bookmarks || {}).length
+      );
+    }
+
+    function mergeProgressStates(remoteState, localState) {
+      const remote = normalizeProgressState(remoteState);
+      const local = normalizeProgressState(localState);
+      const localIsMeaningful = hasMeaningfulProgress(local);
+      const remoteIsMeaningful = hasMeaningfulProgress(remote);
+      if (!remoteIsMeaningful) return local;
+      if (!localIsMeaningful) return remote;
+      const merged = normalizeProgressState(remote);
+      ["completedDays", "dailyBlocksDone", "tahajjudDates", "masteredTips"].forEach(key => {
+        merged[key] = Object.assign({}, remote[key], local[key]);
+      });
+      merged.quizStats.answered = Object.assign({}, remote.quizStats.answered, local.quizStats.answered);
+      merged.quizStats.bookmarks = Object.assign({}, remote.quizStats.bookmarks, local.quizStats.bookmarks);
+      return merged;
+    }
+
+    function refreshProgressDrivenViews() {
+      if (typeof applyFrameMode === "function") applyFrameMode();
+      if (typeof populateDaySelect === "function") populateDaySelect();
+      if (typeof renderDashboard === "function") renderDashboard();
+      if (typeof renderPlannerGrid === "function") renderPlannerGrid();
+      if (typeof renderScoreSliders === "function") renderScoreSliders();
+      if (typeof renderAnalyticsChart === "function") renderAnalyticsChart();
+      if (typeof renderCurrentQuestion === "function") renderCurrentQuestion();
+      if (typeof renderQuestionPalette === "function") renderQuestionPalette();
+    }
+
+    async function persistProgressNow(user = currentAuthUser) {
+      if (!user || progressHydratedUserId !== user.id) return;
+      const stateToSave = normalizeProgressState(appState);
+      stateToSave.__progressUpdatedAt = new Date().toISOString();
+      appState.__progressUpdatedAt = stateToSave.__progressUpdatedAt;
+      const { error } = await supabaseClient.from("exam_progress").upsert({
+        user_id: user.id,
+        state: stateToSave,
+        updated_at: stateToSave.__progressUpdatedAt
+      }, { onConflict: "user_id" });
+      if (error) throw error;
+    }
+
+    function queueProgressSync() {
+      if (!currentAuthUser || progressHydratedUserId !== currentAuthUser.id) return;
+      if (progressSyncTimer) clearTimeout(progressSyncTimer);
+      progressSyncTimer = setTimeout(async () => {
+        if (progressSyncInFlight) return;
+        progressSyncInFlight = true;
+        try {
+          await persistProgressNow();
+        } catch (error) {
+          console.error("Progress sync error", error);
+        } finally {
+          progressSyncInFlight = false;
+        }
+      }, 700);
+    }
+
+    async function syncProgressForUser(user) {
+      const localSnapshot = normalizeProgressState(appState);
+      const { data, error } = await supabaseClient
+        .from("exam_progress")
+        .select("state, updated_at")
+        .eq("user_id", user.id)
+        .maybeSingle();
+      if (error) throw error;
+
+      if (!data) {
+        progressHydratedUserId = user.id;
+        await persistProgressNow(user);
+        return;
+      }
+
+      const localUpdatedAt = localSnapshot.__progressUpdatedAt ? Date.parse(localSnapshot.__progressUpdatedAt) : 0;
+      const remoteUpdatedAt = data.updated_at ? Date.parse(data.updated_at) : 0;
+      const remoteState = normalizeProgressState(data.state);
+      const localIsNewer = localUpdatedAt > remoteUpdatedAt;
+      const merged = localIsNewer ? mergeProgressStates(data.state, localSnapshot) : remoteState;
+      appState = merged;
+      progressHydratedUserId = user.id;
+      if (localIsNewer || hasMeaningfulProgress(localSnapshot) && !hasMeaningfulProgress(data.state)) {
+        await persistProgressNow(user);
+      }
+    }
+
     const defaultState = {
       selectedDay: 1,
       completedDays: {},       // { 1: true, 2: false }
@@ -1539,7 +2045,9 @@
 
     function saveState() {
       try {
+        appState.__progressUpdatedAt = new Date().toISOString();
         localStorage.setItem(STORAGE_KEY, JSON.stringify(appState));
+        queueProgressSync();
       } catch (e) {
         // Ignore storage errors in sandboxed iframe
       }
@@ -2318,6 +2826,34 @@
       loadState();
       applyFrameMode();
 
+      // Member account, payment request, and admin review controls
+      const authModal = document.getElementById("authModal");
+      const adminModal = document.getElementById("adminModal");
+      document.getElementById("btnOpenAuth")?.addEventListener("click", async () => {
+        renderMembershipPanel();
+        authModal?.classList.remove("hidden");
+        if (currentAuthUser) {
+          try { await loadMembershipState(currentAuthUser); renderMembershipPanel(); } catch (error) { setInlineMessage("memberMessage", "โหลดสถานะสมาชิกไม่สำเร็จ", "error"); }
+        }
+      });
+      document.getElementById("btnCloseAuth")?.addEventListener("click", () => authModal?.classList.add("hidden"));
+      document.getElementById("btnAuthModeLogin")?.addEventListener("click", () => setAuthMode("login"));
+      document.getElementById("btnAuthModeSignup")?.addEventListener("click", () => setAuthMode("signup"));
+      document.getElementById("btnSubmitAuth")?.addEventListener("click", submitAuthForm);
+      document.getElementById("btnSubmitPayment")?.addEventListener("click", submitPaymentRequest);
+      document.getElementById("btnSignOut")?.addEventListener("click", async () => {
+        const { error } = await supabaseClient.auth.signOut();
+        if (error) setInlineMessage("memberMessage", error.message || "ออกจากระบบไม่สำเร็จ", "error");
+        else authModal?.classList.add("hidden");
+      });
+      document.getElementById("btnOpenAdmin")?.addEventListener("click", async () => {
+        if (!currentAuthUser || currentAuthUser.app_metadata?.exam_role !== "admin") return;
+        adminModal?.classList.remove("hidden");
+        await loadAdminQueue();
+      });
+      document.getElementById("btnCloseAdmin")?.addEventListener("click", () => adminModal?.classList.add("hidden"));
+      document.getElementById("btnRefreshAdmin")?.addEventListener("click", loadAdminQueue);
+
       // Toggle Mobile Frame / Fullscreen
       document.getElementById("btnToggleAppFrame").addEventListener("click", () => {
         appState.isFullWidthFrame = !appState.isFullWidthFrame;
@@ -2596,6 +3132,10 @@
           navigator.serviceWorker.register("./sw.js", { scope: "./" }).catch(() => {});
         });
       }
+
+      // Load the signed-in user's progress from Supabase after the local app is ready.
+      // Local Storage remains a cache/fallback; the database is the primary source.
+      initSupabaseAuth();
     });
   </script>
 </body>
