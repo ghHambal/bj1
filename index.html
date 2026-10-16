@@ -723,6 +723,8 @@
           <input id="authPassword" type="password" autocomplete="current-password" minlength="6" placeholder="อย่างน้อย 6 ตัวอักษร" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white text-sm" />
         </div>
         <button id="btnSubmitAuth" class="w-full bg-violet-500 hover:bg-violet-400 text-white font-extrabold text-sm py-3 rounded-xl tap-card">เข้าสู่ระบบ</button>
+        <div class="flex items-center gap-2 text-[10px] text-slate-500"><span class="h-px bg-slate-700 flex-1"></span><span>หรือ</span><span class="h-px bg-slate-700 flex-1"></span></div>
+        <button id="btnSignInGoogle" class="w-full bg-white hover:bg-slate-100 text-slate-900 font-extrabold text-sm py-2.5 rounded-xl tap-card flex items-center justify-center gap-2"><span class="text-base">G</span><span>เข้าสู่ระบบด้วย Google</span></button>
         <p id="authMessage" class="hidden text-xs leading-relaxed rounded-xl p-3"></p>
         <p class="text-[10px] text-slate-500 leading-relaxed">ระบบสมาชิกใช้ Supabase Auth ส่วนความคืบหน้าการทำข้อสอบยังเก็บไว้ในเครื่องของผู้ใช้แต่ละคนเหมือนเดิม</p>
       </div>
@@ -1748,6 +1750,20 @@
         setInlineMessage("authMessage", error.message || "ดำเนินการไม่สำเร็จ กรุณาตรวจสอบข้อมูลอีกครั้ง", "error");
       } finally {
         if (button) button.disabled = false;
+      }
+    }
+
+    async function signInWithGoogle() {
+      try {
+        setInlineMessage("authMessage", "กำลังเปิดหน้าล็อกอิน Google...", "info");
+        const { error } = await supabaseClient.auth.signInWithOAuth({
+          provider: "google",
+          options: { redirectTo: `${window.location.origin}${window.location.pathname}` }
+        });
+        if (error) throw error;
+      } catch (error) {
+        console.error("Google auth error", error);
+        setInlineMessage("authMessage", error.message || "เปิด Google Login ไม่สำเร็จ", "error");
       }
     }
 
@@ -2840,6 +2856,7 @@
       document.getElementById("btnAuthModeLogin")?.addEventListener("click", () => setAuthMode("login"));
       document.getElementById("btnAuthModeSignup")?.addEventListener("click", () => setAuthMode("signup"));
       document.getElementById("btnSubmitAuth")?.addEventListener("click", submitAuthForm);
+      document.getElementById("btnSignInGoogle")?.addEventListener("click", signInWithGoogle);
       document.getElementById("btnSubmitPayment")?.addEventListener("click", submitPaymentRequest);
       document.getElementById("btnSignOut")?.addEventListener("click", async () => {
         const { error } = await supabaseClient.auth.signOut();
