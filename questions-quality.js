@@ -8,6 +8,7 @@
     window.BATCH5_QUESTIONS,
     window.BATCH6_QUESTIONS,
     window.BATCH7_QUESTIONS,
+    window.BATCH8_QUESTIONS,
   ].filter(Array.isArray);
   const questions = sources.flat();
   if (!questions.length) return;
