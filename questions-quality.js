@@ -7,6 +7,7 @@
     window.BATCH4_QUESTIONS,
     window.BATCH5_QUESTIONS,
     window.BATCH6_QUESTIONS,
+    window.BATCH7_QUESTIONS,
   ].filter(Array.isArray);
   const questions = sources.flat();
   if (!questions.length) return;
@@ -62,8 +63,13 @@
     if (answer.includes("→") !== candidate.includes("→")) return false;
     const answerTokens = new Set(tokens(answer));
     const candidateTokens = new Set(tokens(candidate));
+    const normalizedAnswer = key(answer).replace(/\s+/gu, "");
+    const normalizedCandidate = key(candidate).replace(/\s+/gu, "");
+    if (normalizedCandidate.includes(normalizedAnswer) && normalizedCandidate.length <= normalizedAnswer.length + 24) return false;
+    if (normalizedAnswer.includes(normalizedCandidate) && normalizedAnswer.length <= normalizedCandidate.length + 24) return false;
     const shared = [...answerTokens].filter((token) => candidateTokens.has(token)).length;
     const similarity = shared / Math.max(1, Math.min(answerTokens.size, candidateTokens.size));
+    if (shared === answerTokens.size && candidateTokens.size <= answerTokens.size + 4) return false;
     if (similarity >= 0.85 && Math.abs(answerTokens.size - candidateTokens.size) <= 1) return false;
     if (hasNumber(answer)) return true;
     if (/เขียนถูกต้อง|เขียนคำ|สะกด|คำใด/u.test(prompt) && candidateWords !== answerWords) return false;
@@ -215,6 +221,6 @@
       question.options = rebuilt.options;
       question.ans = rebuilt.ans;
       question.distractorQuality = "หัวข้อเดียวกันและมีตัวลวงใกล้เคียง v1";
-    }
+    } else question.distractorQuality = "คงตัวเลือกเดิมที่ตรวจแล้ว";
   }
 })();
