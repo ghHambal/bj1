@@ -804,6 +804,7 @@
   <div id="toastBox" class="fixed bottom-20 left-1/2 -translate-x-1/2 z-50 hidden bg-emerald-400 text-slate-950 font-extrabold text-xs px-4 py-2.5 rounded-2xl shadow-2xl border border-white/20 max-w-[90vw] text-center"></div>
 
   <script src="./questions.js"></script>
+  <script src="./questions-extra.js"></script>
   <script>
     // ============================================================================
     // 1. คลังข้อสอบจริงและแนวข้อสอบมาตรฐานศูนย์สอบ ม.ธรรมศาสตร์ (ครบทั้ง 6 วิชาหลัก)
@@ -1449,6 +1450,9 @@
     );
     if (Array.isArray(window.SIMULATED_QUESTIONS)) {
       QUESTION_BANK.push(...window.SIMULATED_QUESTIONS);
+    }
+    if (Array.isArray(window.EXTRA_QUESTIONS)) {
+      QUESTION_BANK.push(...window.EXTRA_QUESTIONS);
     }
     // ============================================================================
     // 2. คลังคัมภีร์สูตรเด็ด & สรุปเก็งจุดออกสอบ 100% (จากไฟล์ติวทั้ง 7 ไฟล์)
