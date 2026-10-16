@@ -127,12 +127,6 @@
 
         <!-- Right Quick Pill Buttons -->
         <div class="flex items-center gap-1.5 shrink-0">
-          <!-- Install as a standalone app when the browser supports it -->
-          <button id="btnInstallApp" hidden class="bg-emerald-950/90 hover:bg-emerald-900 border border-emerald-400/40 text-emerald-200 text-[11px] font-semibold px-2.5 py-1.5 rounded-xl flex items-center gap-1 transition tap-card" title="ติดตั้งแอปไว้ที่หน้าจอหลัก">
-            <span>📲</span>
-            <span>ติดตั้งแอป</span>
-          </button>
-
           <!-- Floating Mini Timer Button -->
           <button id="btnQuickTimerToggle" class="bg-slate-900 hover:bg-slate-800 border border-amber-500/35 text-amber-300 text-xs font-mono font-bold px-2.5 py-1.5 rounded-xl flex items-center gap-1 transition tap-card" title="เปิด/ปิดตัวจับเวลาอ่านหนังสือ">
             <span>⏱️</span>
@@ -693,6 +687,12 @@
       </button>
     </div>
   </div>
+
+  <!-- Floating install action: keeps the header clear and stays above mobile navigation -->
+  <button id="btnInstallApp" hidden class="fixed bottom-24 right-3 sm:bottom-5 sm:right-5 z-50 bg-emerald-950/95 hover:bg-emerald-900 border border-emerald-400/50 text-emerald-200 text-xs font-extrabold px-3.5 py-2.5 rounded-2xl flex items-center gap-1.5 transition tap-card shadow-2xl shadow-emerald-950/50" title="ติดตั้งแอปไว้ที่หน้าจอหลัก" aria-label="ติดตั้งแอปไว้ที่หน้าจอหลัก">
+    <span class="text-base">📲</span>
+    <span>ติดตั้งแอป</span>
+  </button>
 
   <!-- MEMBER AUTH / PAYMENT MODAL -->
   <div id="authModal" class="fixed inset-0 z-[60] hidden bg-slate-950/85 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4">
