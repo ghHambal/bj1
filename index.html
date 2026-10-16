@@ -4,6 +4,14 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>แอปพิชิตที่ 1 ครูผู้ช่วย สพฐ. 69 — ศูนย์สอบ ม.ธรรมศาสตร์ & ตารางครู-ตะฮัจญุด</title>
+  <meta name="theme-color" content="#020617" />
+  <meta name="description" content="แอปเตรียมสอบครูผู้ช่วย สพฐ. ภาค ก และภาค ข พร้อมตารางอ่านหนังสือและตะฮัจญุด" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="ครูผู้ช่วย 69" />
+  <link rel="manifest" href="./manifest.webmanifest" />
+  <link rel="icon" href="./icon.svg" type="image/svg+xml" />
+  <link rel="apple-touch-icon" sizes="180x180" href="./icon-180.png" />
   <script src="https://cdn.tailwindcss.com/3.4.17"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -118,6 +126,12 @@
 
         <!-- Right Quick Pill Buttons -->
         <div class="flex items-center gap-1.5 shrink-0">
+          <!-- Install as a standalone app when the browser supports it -->
+          <button id="btnInstallApp" hidden class="bg-emerald-950/90 hover:bg-emerald-900 border border-emerald-400/40 text-emerald-200 text-[11px] font-semibold px-2.5 py-1.5 rounded-xl flex items-center gap-1 transition tap-card" title="ติดตั้งแอปไว้ที่หน้าจอหลัก">
+            <span>📲</span>
+            <span>ติดตั้งแอป</span>
+          </button>
+
           <!-- Floating Mini Timer Button -->
           <button id="btnQuickTimerToggle" class="bg-slate-900 hover:bg-slate-800 border border-amber-500/35 text-amber-300 text-xs font-mono font-bold px-2.5 py-1.5 rounded-xl flex items-center gap-1 transition tap-card" title="เปิด/ปิดตัวจับเวลาอ่านหนังสือ">
             <span>⏱️</span>
@@ -2465,6 +2479,44 @@
       startNewExamSession();
       renderCheatSheets();
       renderScoreSliders();
+
+      // PWA installation: Chromium fires beforeinstallprompt; iOS Safari uses
+      // the Share menu instead, so show the same button with a short hint.
+      const installButton = document.getElementById("btnInstallApp");
+      let deferredInstallPrompt = null;
+      const isIOS = /iphone|ipad|ipod/i.test(window.navigator.userAgent);
+      const isStandalone = window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone === true;
+
+      if (installButton && !isStandalone && isIOS) installButton.hidden = false;
+
+      window.addEventListener("beforeinstallprompt", (event) => {
+        event.preventDefault();
+        deferredInstallPrompt = event;
+        if (installButton) installButton.hidden = false;
+      });
+
+      installButton?.addEventListener("click", async () => {
+        if (!deferredInstallPrompt) {
+          alert("iPhone/iPad: กดปุ่มแชร์ของ Safari แล้วเลือก ‘เพิ่มไปยังหน้าจอโฮม’");
+          return;
+        }
+        deferredInstallPrompt.prompt();
+        await deferredInstallPrompt.userChoice;
+        deferredInstallPrompt = null;
+        installButton.hidden = true;
+      });
+
+      window.addEventListener("appinstalled", () => {
+        deferredInstallPrompt = null;
+        if (installButton) installButton.hidden = true;
+        showToast("ติดตั้งแอปไว้ที่หน้าจอหลักแล้ว");
+      });
+
+      if ("serviceWorker" in navigator) {
+        window.addEventListener("load", () => {
+          navigator.serviceWorker.register("./sw.js", { scope: "./" }).catch(() => {});
+        });
+      }
     });
   </script>
 </body>
