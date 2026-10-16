@@ -3,9 +3,9 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>แอปพิชิตที่ 1 ครูผู้ช่วย สพฐ. 69 — ศูนย์สอบ ม.ธรรมศาสตร์ & ตารางครู-ตะฮัจญุด</title>
+  <title>แอปพิชิตที่ 1 ครูผู้ช่วย สพฐ. 69 — ศูนย์สอบ ม.ธรรมศาสตร์ & ตารางชีวิต</title>
   <meta name="theme-color" content="#020617" />
-  <meta name="description" content="แอปเตรียมสอบครูผู้ช่วย สพฐ. ภาค ก และภาค ข พร้อมตารางอ่านหนังสือและตะฮัจญุด" />
+  <meta name="description" content="แอปเตรียมสอบครูผู้ช่วย สพฐ. ภาค ก และภาค ข พร้อมตารางอ่านหนังสือและโหมดตื่นเช้าตามความสมัครใจ" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="ครูผู้ช่วย 69" />
@@ -139,9 +139,9 @@
           </button>
 
           <!-- Tahajjud Settings Icon Button -->
-          <button id="btnOpenTahajjudModal" class="bg-sky-950/90 hover:bg-sky-900 border border-sky-400/40 text-sky-200 text-[11px] font-semibold px-2.5 py-1.5 rounded-xl flex items-center gap-1 transition tap-card" title="ตั้งค่าเวลาละหมาดตะฮัจญุดและตารางชีวิต">
+          <button id="btnOpenTahajjudModal" class="bg-sky-950/90 hover:bg-sky-900 border border-sky-400/40 text-sky-200 text-[11px] font-semibold px-2.5 py-1.5 rounded-xl flex items-center gap-1 transition tap-card" title="ตั้งค่าโหมดตื่นเช้าและตารางชีวิต">
             <span>🌙</span>
-            <span class="truncate max-w-[92px] sm:max-w-none">ตั้งค่าเวลาละหมาดตะฮัจญุด & ตารางชีวิต</span>
+            <span class="truncate max-w-[92px] sm:max-w-none">ตั้งค่าโหมดตื่นเช้า & ตารางชีวิต</span>
           </button>
 
           <!-- Toggle Mobile / Expanded Width (Useful on Tablet/Desktop) -->
@@ -157,7 +157,7 @@
           <span>🎯</span><span>แดชบอร์ด & แผนวันนี้</span>
         </button>
         <button data-tab="planner" class="nav-tab px-2.5 py-1 rounded-xl text-[11px] font-medium text-slate-300 transition flex items-center gap-1 shrink-0 tap-card">
-          <span>📅</span><span>ตาราง 30 วัน (ครูสอน + ตะฮัจญุด)</span>
+          <span>📅</span><span>ตาราง 30 วัน (ครูสอน + อ่านหนังสือ)</span>
         </button>
         <button data-tab="exam" class="nav-tab px-2.5 py-1 rounded-xl text-[11px] font-medium text-slate-300 transition flex items-center gap-1 shrink-0 tap-card">
           <span>📝</span><span>สนามจำลองสอบจริง ม.ธรรมศาสตร์</span>
@@ -262,7 +262,7 @@
             <div class="text-[10px] text-slate-400">แตะเพื่อซ้อมข้อสอบ มธ.</div>
           </div>
 
-          <div class="tu-card rounded-2xl p-3 tahajjud-glow">
+          <div id="tahajjudDashboardCard" class="tu-card rounded-2xl p-3 tahajjud-glow">
             <div class="flex items-center justify-between text-[11px] text-sky-300">
               <span>พลังตะฮัจญุด</span>
               <span>🌙</span>
@@ -350,7 +350,7 @@
               </p>
             </div>
             <button id="btnOpenTahajjudModal2" class="bg-sky-900/80 hover:bg-sky-800 text-sky-200 text-[11px] font-bold px-2.5 py-1.5 rounded-xl border border-sky-400/30 shrink-0 tap-card">
-              ⚙️ ปรับเวลาตะฮัจญุด/ตารางวันทำงาน
+              ⚙️ ปรับโหมดตื่น/ตารางวันทำงาน
             </button>
           </div>
 
@@ -617,19 +617,29 @@
 
   </div>
 
-  <!-- MOBILE BOTTOM-SHEET MODAL: TAHAJJUD & SCHEDULE SETTINGS -->
+  <!-- MOBILE BOTTOM-SHEET MODAL: OPTIONAL EARLY-MORNING MODE & SCHEDULE SETTINGS -->
   <div id="tahajjudModal" class="fixed inset-0 z-50 hidden bg-slate-950/80 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4">
     <div class="tu-card rounded-t-3xl sm:rounded-2xl max-w-md w-full p-5 space-y-4 border-t sm:border border-sky-400/40 max-h-[90vh] overflow-y-auto">
       <div class="flex items-center justify-between border-b border-slate-700 pb-3">
         <h3 class="text-sm sm:text-base font-extrabold text-sky-300 flex items-center gap-2">
           <span>🌙</span>
-          <span>ตั้งค่าเวลาตะฮัจญุด & ตารางชีวิตครู</span>
+          <span>ตั้งค่าโหมดตื่นเช้า & ตารางชีวิตครู</span>
         </h3>
         <button id="btnCloseTahajjudModal" class="w-8 h-8 rounded-full bg-slate-800 text-slate-300 hover:text-white flex items-center justify-center font-bold">✕</button>
       </div>
 
       <div class="space-y-3 text-xs">
-        <div class="grid grid-cols-2 gap-2.5">
+        <div class="flex items-center justify-between gap-3 p-3 rounded-xl bg-slate-900/80 border border-slate-700">
+          <div>
+            <strong class="block text-slate-100">โหมดตื่นมาละหมาดตะฮัจญุด</strong>
+            <span id="tahajjudModeStatus" class="text-[11px] text-slate-400">เปิดใช้งานอยู่</span>
+          </div>
+          <button id="btnToggleTahajjudMode" type="button" class="shrink-0 px-3 py-2 rounded-xl bg-sky-500/20 text-sky-200 border border-sky-400/40 font-bold tap-card">
+            ปิดโหมดนี้
+          </button>
+        </div>
+
+        <div id="tahajjudOnlySettings" class="grid grid-cols-2 gap-2.5">
           <div>
             <label class="block text-slate-300 mb-1">เวลาตื่นละหมาดตะฮัจญุด:</label>
             <input id="inputTahajjudStart" type="time" value="03:30" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white" />
@@ -641,7 +651,7 @@
         </div>
 
         <div class="grid grid-cols-2 gap-2.5">
-          <div>
+          <div id="tahajjudRakaatField">
             <label class="block text-slate-300 mb-1">ร็อกอะฮ์ตะฮัจญุด:</label>
             <select id="inputTahajjudRakaat" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2.5 py-2 text-white">
               <option value="2 ร็อกอะฮ์ + วิติร 1">2 ร็อกอะฮ์ + วิติร 1</option>
@@ -666,7 +676,7 @@
           </div>
         </div>
 
-        <div class="p-3 rounded-xl bg-sky-950/60 border border-sky-500/30 text-[11px] text-sky-200 leading-relaxed">
+        <div id="tahajjudTip" class="p-3 rounded-xl bg-sky-950/60 border border-sky-500/30 text-[11px] text-sky-200 leading-relaxed">
           💡 <strong>เคล็ดลับครูมุสลิมพิชิตที่ 1:</strong> เข้านอน 22:00 น. เพื่อให้หลับลึก 5.5 ชม. แล้วตื่นมาอาบน้ำละหมาดตะฮัจญุดเวลา 03:30 น. สมองจะปลอดโปร่งและจำเนื้อหากฎหมาย/คณิตศาสตร์ได้แม่นยำกว่าปกติถึง 3 เท่า!
         </div>
       </div>
@@ -1487,6 +1497,7 @@
       hideCompletedDays: false,
       isFullWidthFrame: false,
       settings: {
+        tahajjudEnabled: true,
         tahajjudStart: "03:30",
         tahajjudStudyEnd: "05:15",
         tahajjudRakaat: "4 ร็อกอะฮ์ + วิติร 3",
@@ -1599,8 +1610,45 @@
       });
     }
 
+    function isTahajjudEnabled() {
+      return appState.settings.tahajjudEnabled !== false;
+    }
+
+    function renderTahajjudMode() {
+      const enabled = isTahajjudEnabled();
+      const dashboardCard = document.getElementById("tahajjudDashboardCard");
+      const modeStatus = document.getElementById("tahajjudModeStatus");
+      const toggleButton = document.getElementById("btnToggleTahajjudMode");
+      const optionalFields = [
+        document.getElementById("tahajjudOnlySettings"),
+        document.getElementById("tahajjudRakaatField"),
+        document.getElementById("tahajjudTip")
+      ];
+
+      if (dashboardCard) dashboardCard.classList.toggle("hidden", !enabled);
+      if (modeStatus) {
+        modeStatus.textContent = enabled
+          ? "เปิดอยู่: แสดงตารางตื่นมาละหมาดและการเช็กอิน"
+          : "ปิดอยู่: ใช้ตารางอ่านหนังสือทั่วไปโดยไม่แสดงส่วนละหมาด";
+      }
+      if (toggleButton) {
+        toggleButton.textContent = enabled ? "ปิดโหมดนี้" : "เปิดโหมดนี้";
+        toggleButton.classList.toggle("bg-sky-500/20", enabled);
+        toggleButton.classList.toggle("text-sky-200", enabled);
+        toggleButton.classList.toggle("border-sky-400/40", enabled);
+        toggleButton.classList.toggle("bg-emerald-500/20", !enabled);
+        toggleButton.classList.toggle("text-emerald-200", !enabled);
+        toggleButton.classList.toggle("border-emerald-400/40", !enabled);
+      }
+      optionalFields.forEach((field) => {
+        if (field) field.classList.toggle("hidden", !enabled);
+      });
+    }
+
     function renderDashboard() {
       const s = appState.settings;
+      const tahajjudEnabled = isTahajjudEnabled();
+      renderTahajjudMode();
       document.getElementById("kpiTahajjudWindow").textContent = `(${s.tahajjudStart} - ${s.tahajjudStudyEnd} น.)`;
       document.getElementById("lblTahajjudSlot").textContent = `${s.tahajjudStart} – ${s.tahajjudStudyEnd} น.`;
       document.getElementById("kpiTahajjudCount").textContent = `${appState.tahajjudLogCount} คืน`;
@@ -1626,14 +1674,14 @@
       if (!container) return;
 
       const blocks = [
-        {
+        ...(tahajjudEnabled ? [{
           key: `${dayObj.day}-tahajjud`,
           time: `${s.tahajjudStart} – ${s.tahajjudStudyEnd} น.`,
           badge: "🌙 ตะฮัจญุด + สมองทองคำ",
           badgeClass: "bg-sky-500/20 text-sky-300 border-sky-500/30",
           title: `ละหมาดตะฮัจญุด (${s.tahajjudRakaat}) & อ่านจำแม่น`,
           desc: dayObj.tahajjud
-        },
+        }] : []),
         {
           key: `${dayObj.day}-school`,
           time: s.schoolHours,
@@ -1686,10 +1734,13 @@
       const toggleBlock = (k, newVal) => {
         appState.dailyBlocksDone[k] = newVal;
         const dNum = dayObj.day;
-        const all4 = ["tahajjud", "school", "evening", "night"].every(slot => appState.dailyBlocksDone[`${dNum}-${slot}`]);
-        if (all4) {
+        const requiredSlots = isTahajjudEnabled()
+          ? ["tahajjud", "school", "evening", "night"]
+          : ["school", "evening", "night"];
+        const allRequired = requiredSlots.every(slot => appState.dailyBlocksDone[`${dNum}-${slot}`]);
+        if (allRequired) {
           appState.completedDays[dNum] = true;
-          showToast(`🎉 ยอดเยี่ยม! คุณครูทำภารกิจครบทั้ง 4 ช่วงของ Day ${dNum} แล้ว!`);
+          showToast(`🎉 ยอดเยี่ยม! คุณครูทำภารกิจครบทั้ง ${requiredSlots.length} ช่วงของ Day ${dNum} แล้ว!`);
         }
         saveState();
         renderDashboard();
@@ -1750,9 +1801,11 @@
             <h4 class="text-xs sm:text-sm font-extrabold text-white leading-snug">${d.title}</h4>
 
             <div class="space-y-1.5 text-xs text-slate-300">
-              <div class="p-2 rounded-xl bg-sky-950/50 border border-sky-500/20">
-                <strong class="text-sky-300">🌙 ตะฮัจญุด (${s.tahajjudStart}):</strong> ${d.tahajjud}
-              </div>
+              ${isTahajjudEnabled() ? `
+                <div class="p-2 rounded-xl bg-sky-950/50 border border-sky-500/20">
+                  <strong class="text-sky-300">🌙 ตะฮัจญุด (${s.tahajjudStart}):</strong> ${d.tahajjud}
+                </div>
+              ` : ""}
               <div class="p-2 rounded-xl bg-slate-950/80 border border-slate-800">
                 <strong class="text-slate-200">🏫 พักเที่ยง:</strong> ${d.lunch}
               </div>
@@ -2252,8 +2305,11 @@
         }
       });
 
+      const focusWindowAdvice = isTahajjudEnabled()
+        ? "ในช่วงหลังละหมาดตะฮัจญุด"
+        : "ในช่วงเวลาที่มีสมาธิสูงสุดของคุณ";
       document.getElementById("weaknessAdviceBox").innerHTML = `
-        💡 <strong>กลยุทธ์คว้าที่ 1 ศูนย์สอบ มธ.:</strong> เก็บแต้มเต็มจาก <strong>ข้าราชการที่ดี (50 คะแนน)</strong> และ <strong>กฎหมายการศึกษา ภาค ข (25 คะแนน)</strong> ในช่วงหลังละหมาดตะฮัจญุด และซ้อมตัดช้อยส์วิชาการศึกษา/คณิตศาสตร์ทุกเย็นหลังเลิกสอน
+        💡 <strong>กลยุทธ์คว้าที่ 1 ศูนย์สอบ มธ.:</strong> เก็บแต้มเต็มจาก <strong>ข้าราชการที่ดี (50 คะแนน)</strong> และ <strong>กฎหมายการศึกษา ภาค ข (25 คะแนน)</strong> ${focusWindowAdvice} และซ้อมตัดช้อยส์วิชาการศึกษา/คณิตศาสตร์ทุกเย็นหลังเลิกสอน
       `;
     }
 
@@ -2385,6 +2441,7 @@
       // Tahajjud Modal
       const modal = document.getElementById("tahajjudModal");
       const openModal = () => {
+        renderTahajjudMode();
         document.getElementById("inputTahajjudStart").value = appState.settings.tahajjudStart;
         document.getElementById("inputTahajjudStudyEnd").value = appState.settings.tahajjudStudyEnd;
         document.getElementById("inputTahajjudRakaat").value = appState.settings.tahajjudRakaat;
@@ -2396,6 +2453,15 @@
       document.getElementById("btnOpenTahajjudModal").addEventListener("click", openModal);
       document.getElementById("btnOpenTahajjudModal2").addEventListener("click", openModal);
       document.getElementById("btnCloseTahajjudModal").addEventListener("click", () => modal.classList.add("hidden"));
+      document.getElementById("btnToggleTahajjudMode").addEventListener("click", () => {
+        appState.settings.tahajjudEnabled = !isTahajjudEnabled();
+        saveState();
+        renderTahajjudMode();
+        renderDashboard();
+        renderPlannerGrid();
+        renderScoreSliders();
+        showToast(isTahajjudEnabled() ? "🌙 เปิดโหมดตื่นมาละหมาดตะฮัจญุดแล้ว" : "✅ ปิดโหมดตะฮัจญุดแล้ว ใช้ตารางอ่านหนังสือทั่วไปได้เลย");
+      });
       document.getElementById("btnSaveTahajjudSettings").addEventListener("click", () => {
         appState.settings.tahajjudStart = document.getElementById("inputTahajjudStart").value || "03:30";
         appState.settings.tahajjudStudyEnd = document.getElementById("inputTahajjudStudyEnd").value || "05:15";
@@ -2408,7 +2474,7 @@
         renderDashboard();
         renderPlannerGrid();
         renderScoreSliders();
-        showToast("✅ บันทึกเวลาละหมาดตะฮัจญุดและอัปเดตแอปแล้ว!");
+        showToast(isTahajjudEnabled() ? "✅ บันทึกโหมดตะฮัจญุดและตารางชีวิตแล้ว!" : "✅ บันทึกตารางชีวิตทั่วไปแล้ว!");
       });
 
       // Exam controls
