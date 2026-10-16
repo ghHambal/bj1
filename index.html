@@ -805,6 +805,7 @@
 
   <script src="./questions.js"></script>
   <script src="./questions-extra.js"></script>
+  <script src="./questions-batch4.js"></script>
   <script>
     // ============================================================================
     // 1. คลังข้อสอบจริงและแนวข้อสอบมาตรฐานศูนย์สอบ ม.ธรรมศาสตร์ (ครบทั้ง 6 วิชาหลัก)
@@ -1453,6 +1454,9 @@
     }
     if (Array.isArray(window.EXTRA_QUESTIONS)) {
       QUESTION_BANK.push(...window.EXTRA_QUESTIONS);
+    }
+    if (Array.isArray(window.BATCH4_QUESTIONS)) {
+      QUESTION_BANK.push(...window.BATCH4_QUESTIONS);
     }
     // ============================================================================
     // 2. คลังคัมภีร์สูตรเด็ด & สรุปเก็งจุดออกสอบ 100% (จากไฟล์ติวทั้ง 7 ไฟล์)

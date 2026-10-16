@@ -1,9 +1,10 @@
-const CACHE_NAME = "kru-helper-69-shell-v8";
+const CACHE_NAME = "kru-helper-69-shell-v9";
 const APP_SHELL = [
   "./",
   "./index.html",
   "./questions.js",
   "./questions-extra.js",
+  "./questions-batch4.js",
   "./manifest.webmanifest",
   "./icon.svg",
   "./icon-180.png",
